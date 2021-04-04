@@ -1,0 +1,39 @@
+server:
+  port: 8086
+  servlet:
+        context-path: / #项目路径
+ 
+spring:
+  thymeleaf: 
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+    encoding: UTF-8
+    servlet:
+      content-type: text/html
+    mode: HTML5
+  datasource: 
+    username: root
+    password: 123456
+    url: jdbc:mysql://localhost:3306/dc?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=GMT%2B8
+    driver-class-name: com.mysql.jdbc.Driver
+
+mybatis:
+  mapper-locations: classpath:mapping/*Mapper.xml
+  type-aliases-package: test.dc
+  configuration:      
+        log-impl: org.apache.ibatis.logging.stdout.StdOutImpl #sql日志打印
+        call-setters-on-nulls: true #解决返回类型为Map的时候如果值为null将不会封装此字段
+ 
+#日志
+logging:
+  path: /log/
+  file: file.log
+  pattern: 
+    console: '%d{yyyy/MM/dd-HH:mm:ss} [%thread] %-5level %logger- %msg%n' 
+    file: '%d{yyyy/MM/dd-HH:mm} %-5level %logger- %msg%n' 
+  level: 
+    com:
+      dzqc: 
+        exam: 
+          bk: debug

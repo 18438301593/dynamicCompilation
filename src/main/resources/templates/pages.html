@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <title>java动态编译技术</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+  <link rel="stylesheet" th:href="@{/index.css}">
+	<link rel="stylesheet" th:href="@{/prism2.css}">
+  <style type="text/css">
+	  a:hover{
+		  text-decoration:none;
+	  }
+	  blockquote {
+		  overflow: hidden;
+		  padding-right: 1.5em;
+		  padding-left: 1em;
+		  margin-left: 0;
+		  margin-right: 0;
+		  border-left: 5px solid #ccc;
+	  }
+	  blockquote > p, h1, h2, h3, h4, h5 {
+		  display: block;
+		  margin-block-start: 0.3em;
+		  margin-block-end: 0.3em;
+		  margin-inline-start: 0px;
+		  margin-inline-end: 0px;
+	  }
+	  .des p {
+		  text-indent: 2em;
+		  line-height: 30px;
+	  }
+	  .des code:not([class]){
+		  background-color: rgba(69, 142, 209, 0.2);
+		  padding: .15em;
+		  border-radius: 2px;
+	  }
+	  .c-error{
+		  background:rgb(253, 226, 226) !important;
+	  }
+  </style>
+</head>
+<body>
+	<div style="width: 900px;margin: auto;margin-bottom: 500px;" id="app">
+		<input type="hidden" th:value="${t.id}" id="id">
+		<div style="width: 100%;text-align: center;"><h3>编译系统（java动态编译技术）</h3></div>
+		<el-divider></el-divider>
+		题目：
+		<span th:each="itemc,itemcStat : ${ts}" class="question">
+			<el-link th:href="@{/page?id=}+${itemc.id}" type="primary" ><el-tag size="smail" th:text="${itemc.title}"></el-tag></el-link>
+			&nbsp;
+		</span>
+		<el-divider></el-divider>
+		<div class="des">
+			<span th:utext="${t.content}"><!--  -->
+			</span>
+		</div>
+		<el-divider content-position="left">提交</el-divider>
+		<el-alert
+				title="时间限制：1s，内存限制：未限制"
+				type="warning">
+		</el-alert>
+		<br>
+		<el-input
+				type="textarea"
+				:rows="5"
+				placeholder="请输入内容"
+				v-model="textarea">
+		</el-input>
+		<el-row>
+			<br>
+			<el-button size="small" type="success" @click="execute">执行</el-button>
+		</el-row>
+		<br>
+		<div class="result-ok" v-show="visible_ok">
+			<el-divider content-position="left">执行结果</el-divider>
+			<el-alert
+					:title="ctime"
+					type="success"
+					:closable="false">
+			</el-alert>
+			<br>
+			<div class="table">
+				<template>
+					<el-table
+							:data="tableData"
+							border
+							:row-class-name="tableRowClassName"
+							style="width: 100%">
+						<el-table-column
+								prop="testingId"
+								label="测试编号"
+								width="120">
+						</el-table-column>
+						<el-table-column
+								prop="result"
+								label="测试状态"
+								width="120">
+						</el-table-column>
+						<el-table-column
+								prop="runTakeTime"
+								label="运行耗时">
+						</el-table-column>
+						<el-table-column
+								prop="address"
+								label="测试数据下载">
+							<template slot-scope="scope">
+								<el-link type="primary" :href="'/download/testing/'+scope.row.testingId">test.txt</el-link>
+							</template>
+						</el-table-column>
+						<el-table-column
+								prop="address"
+								label="测试答案下载">
+							<template slot-scope="scope">
+								<el-link type="primary" :href="'/download/answer/'+scope.row.testingId">result.txt</el-link>
+							</template>
+						</el-table-column>
+					</el-table>
+				</template>
+			</div>
+		</div>
+		<div class="result-error" v-show="visible_err" >
+			<el-alert
+					:title="err_message"
+					type="error"
+					effect="dark">
+			</el-alert>
+		</div>
+	</div>
+
+	<script th:src="@{/vue.js}"></script>
+	<script th:src="@{/index.js}"></script>
+	<script th:src="@{/prism2.js}"></script>
+	<script th:src="@{/axios.min.js}"></script>
+	<script type="text/javascript">
+		new Vue({
+			el: '#app',
+			data: function() {
+				return {
+					visible_ok: false,
+					visible_err: false,
+					ctime: '',
+					err_message: "",
+					textarea: '',
+					tableData: []
+				}
+			},
+			methods: {
+				tableRowClassName({row, rowIndex}) {
+					if(row.timeOut){
+						return "c-error";
+					}
+					return 'c-success';
+				},
+				execute:function(){
+					var th=this;
+					if(th.textarea==""){
+						th.err_message="请输入代码";
+						th.visible_ok=false;
+						th.visible_err=true;
+						return ;
+					}
+					var data = new FormData();
+					data.append('topicId',document.getElementById("id").value);
+					data.append('code',this.textarea);
+					axios.post(path+'/execute',data).then(function (res) {
+						res = res.data;
+						if(res.code==200){
+							if(res.data.compilerSuccess){
+								th.visible_err=false;
+								th.visible_ok=true;
+								th.ctime="编译用户："+res.data.compilerTakeTime+"ms";
+								for(i in res.data.list){
+									if(res.data.list[i].timeOut){
+										res.data.list[i].runTakeTime="超时";
+									}else{
+										res.data.list[i].runTakeTime=res.data.list[i].runTakeTime+"ms";
+									}
+								}
+								th.tableData=res.data.list;
+							}else{
+								th.err_message="编译错误："+res.data.compilerMessage;
+								th.visible_ok=false;
+								th.visible_err=true;
+							}
+						}else{
+							th.err_message=res.msg;
+							th.visible_ok=false;
+							th.visible_err=true;
+						}
+						console.log(res)
+					}).catch(function (error) {
+					});
+				}
+			}
+		})
+		/**
+		$(function(){
+			$("#excute").click(function(){
+				var th=$(this);
+				th.attr("disabled","disabled");
+				$.ajax({
+					url:'/execute',
+					dataType:'json',
+					type:'post',
+					data:{topicId:$("#id").val(),code:$("#code").val()},
+					success:function(res){
+						if(res.code==200){
+							if(res.data.compilerSuccess){
+								$(".success").removeClass("none");
+								$(".error").addClass("none");
+								$(".testing").remove();
+								var d=res.data.list;
+								for(i in d){
+									var tr=$("<tr class='testing'></tr>");
+									tr.append("<td>"+d[i].testingId+"</td>");
+									tr.append("<td>"+(d[i].runTakeTime==null?"运行超时":d[i].result)+"</td>");
+									tr.append("<td>"+(d[i].runTakeTime==null?"-1":d[i].runTakeTime)+"ms</td>");
+									tr.append("<td><a href='/download/testing/"+d[i].testingId+"'>a.txt</a></td>");
+									tr.append("<td><a href='/download/answer/"+d[i].testingId+"'>b.txt</a></td>");
+									$("#table").append(tr);
+								}
+							}else{
+								$(".error").removeClass("none");
+								$(".success").addClass("none");
+								$("#errormsg").text(res.data.compilerMessage)
+							}
+						}else{
+							alert(res.msg);
+						}
+						th.removeAttr("disabled");
+					},error:function(){
+						alert("异常");
+						th.removeAttr("disabled");
+					}
+				})
+			})
+		})
+		**/
+	</script>
+	
+</body>
+</html>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="test.dc.mapper.TestMapper" >
+
+	<select id="getData" resultType="test.dc.entity.Data">
+		SELECT line,data from data  where testing_id = #{id} ORDER BY line asc
+	</select>
+	
+	<select id="getAnswer" resultType="test.dc.entity.Answer">
+		SELECT line,answer from answer WHERE testing_id = #{id} ORDER BY line asc 
+	</select>
+	
+	<select id="selectAllTesting" resultType="test.dc.entity.TestInfo">
+		select id from testing where topic_id = #{id}
+	</select>
+	
+	<select id="getAllTopic" resultType="test.dc.entity.Topic">
+		select id,title from topic
+	</select>
+	
+	<select id="getTopicInfo" resultType="test.dc.entity.Topic">
+		select id,title,content from topic where id=#{id} limit 1
+	</select>
+	
+</mapper>
